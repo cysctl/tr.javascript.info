@@ -327,7 +327,7 @@ try {
 for(let key in user) alert(key); // name
 ```
 
-Please note the important detail in `get` trap, in the line `(*)`:
+Lütfen `get` tuzağındaki, `(*)` satırındaki önemli detaya dikkat edin:
 
 ```js
 get(target, prop) {
@@ -339,36 +339,36 @@ get(target, prop) {
 }
 ```
 
-If an object method is called, such as `user.checkPassword()`, it must be able to access `_password`:
+Bir nesne metodu çağrıldığında, örneğin `user.checkPassword()`, bu metodun `_password`’a erişebilmesi gerekir:
 
 ```js
 user = {
   // ...
   checkPassword(value) {
-    // object method must be able to read _password
+    // nesne metodu _password'ı okuyabilmeli
     return value === this._password;
   }
 }
 ```
 
-Normally, `user.checkPassword()` call gets proxied `user` as `this` (the object before dot becomes `this`), so when it tries to access `this._password`, the property protection kicks in and throws an error. So we bind it to `target` in the line `(*)`. Then all operations from that function directly reference the object, without any property protection.
+Normalde, `user.checkPassword()` çağrısında `this` olarak proxylanmış `user` geçer (noktadan önceki nesne `this` olur). Bu yüzden metod `this._password`’a erişmeye çalıştığında, özellik koruması devreye girer ve hata fırlatır. İşte bu nedenle `(*)` satırında metodu `target`’a bağlarız (`bind`). Böylece o fonksiyon içindeki tüm işlemler doğrudan orijinal nesneye yapılır ve özellik korumasına takılmaz.
 
-That solution is not ideal, as the method may pass the unproxied object somewhere else, and then we'll get messed up: where's the original object, and where's the proxied one.
+Bu çözüm ideal değildir; çünkü metot, proxylanmamış nesneyi başka bir yere aktarabilir ve sonrasında işler karışabilir: Orijinal nesne nerede, proxy nerede?
 
-As an object may be proxied multiple times (multiple proxies may add different "tweaks" to the object), weird bugs may follow.
+Bir nesne birden fazla kez proxylanabilir (farklı proxy’ler nesneye farklı “ince ayarlar” ekleyebilir), bu da garip hatalara yol açabilir.
 
-So, for complex objects with methods such proxy shouldn't be used.
+Dolayısıyla, metotları olan karmaşık nesneler için bu tür bir proxy kullanımı önerilmez.
 
 ```smart header="Private properties of a class"
-Modern JavaScript engines natively support private properties in classes, prefixed with `#`. They are described in the chapter <info:private-protected-properties-methods>. No proxies required.
+Modern JavaScript motorları, `#` ile başlayan sınıf içi özel özellikleri yerel olarak destekler. Bunlar <info:private-protected-properties-methods> bölümünde anlatılmıştır. Proxy gerekmez.
 
-Such properties have their own issues though. In particular, they are not inherited.
+Ancak bu özelliklerin de kendine özgü sorunları vardır. Özellikle, kalıtılmazlar.
 ```
 
 
-## "In range" with "has" trap
+## "has" tuzağı ile "in range" (aralıkta mı?) denetimi
 
-Let's say we have a range object:
+Bir aralık (range) nesnemiz olduğunu varsayalım:
 
 ```js
 let range = {
@@ -377,14 +377,14 @@ let range = {
 };
 ```
 
-We'd like to use "in" operator to check that a number is in `range`.
+Bir sayının `range` içinde olup olmadığını denetlemek için "in" operatörünü kullanmak istiyoruz.
 
-The "has" trap intercepts "in" calls: `has(target, property)`
+"has" tuzağı, "in" çağrılarını yakalar: `has(target, property)`
 
-- `target` -- is the target object, passed as the first argument to `new Proxy`,
-- `property` -- property name
+- `target` -- `new Proxy`’ye ilk argüman olarak geçirilen hedef nesne,,
+- `property` -- özellik adı
 
-Here's the demo:
+Örnek:
 
 ```js run
 let range = {
@@ -406,28 +406,28 @@ alert(50 in range); // false
 */!*
 ```
 
-A nice syntactic sugar, isn't it?
+Güzel bir sözdizim şekeri, değil mi?
 
-## Wrapping functions: "apply"
+## Fonksiyonları sarmalamak: "apply"
 
-We can wrap a proxy around a function as well.
+Bir fonksiyonun etrafına da proxy sarabiliriz.
 
-The `apply(target, thisArg, args)` trap handles calling a proxy as function:
+`apply(target, thisArg, args)` tuzağı, proxy’nin fonksiyon gibi çağrılmasını yakalar:
 
-- `target` is the target object,
-- `thisArg` is the value of `this`.
-- `args` is a list of arguments.
+- `target` hedef nesne (fonksiyon),
+- `thisArg` çağrıda kullanılacak `this` değeri,
+- `args` argümanların listesi.
 
-For example, let's recall `delay(f, ms)` decorator, that we did in the chapter <info:call-apply-decorators>.
+Örneğin, <info:call-apply-decorators> bölümünde yaptığımız `delay(f, ms)` dekoratörünü hatırlayalım.
 
-In that chapter we did it without proxies. A call to `delay(f, ms)` would return a function that forwards all calls to `f` after `ms` milliseconds.
+Orada proxy kullanmadan yapmıştık. `delay(f, ms)` çağrısı, tüm çağrıları `ms` milisaniye sonra `f`’e ileten bir fonksiyon döndürüyordu.
 
-Here's the function-based implementation:
+Fonksiyon-tabanlı uygulama:
 
 ```js run
-// no proxies, just a function wrapper
+// proxy yok, sadece bir sarmalayıcı fonksiyon
 function delay(f, ms) {
-  // return a wrapper that passes the call to f after the timeout
+  // timeout sonrası çağrıyı f'ye ileten bir sarmalayıcı döndür
   return function() { // (*)
     setTimeout(() => f.apply(this, arguments), ms);
   };
@@ -437,15 +437,15 @@ function sayHi(user) {
   alert(`Hello, ${user}!`);
 }
 
-// now calls to sayHi will be delayed for 3 seconds
+// artık sayHi çağrıları 3 saniye gecikmeli
 sayHi = delay(sayHi, 3000);
 
-sayHi("John"); // Hello, John! (after 3 seconds)
+sayHi("John"); // Hello, John! (3 saniye sonra)
 ```
 
-As you can see, that mostly works. The wrapper function `(*)` performs the call after the timeout.
+Gördüğünüz gibi, çoğunlukla çalışıyor. `(*)` satırındaki sarmalayıcı fonksiyon, çağrıyı bekleme süresinden sonra gerçekleştiriyor.
 
-But a wrapper function does not forward property read/write operations or anything else. So if we have a property on the original function, we can't access it after wrapping:
+Ama sarmalayıcı fonksiyon, özellik okuma/yazma gibi diğer işlemleri iletmez. Dolayısıyla, orijinal fonksiyonun bir özelliği varsa, sarmalamadan sonra ona erişemeyiz:
 
 ```js run
 function delay(f, ms) {
@@ -459,20 +459,20 @@ function sayHi(user) {
 }
 
 *!*
-alert(sayHi.length); // 1 (function length is the arguments count)
+alert(sayHi.length); // 1 (function length argüman sayısıdır)
 */!*
 
 sayHi = delay(sayHi, 3000);
 
 *!*
-alert(sayHi.length); // 0 (wrapper has no arguments)
+alert(sayHi.length); // 0 (sarmalayıcının argümanı yok)
 */!*
 ```
 
 
-`Proxy` is much more powerful, as it forwards everything to the target object.
+`Proxy` çok daha güçlüdür; çünkü her şeyi hedef nesneye iletir.
 
-Let's use `Proxy` instead of a wrapping function:
+Sarmalayıcı fonksiyon yerine `Proxy` kullanalım:
 
 ```js run
 function delay(f, ms) {
@@ -490,25 +490,27 @@ function sayHi(user) {
 sayHi = delay(sayHi, 3000);
 
 *!*
-alert(sayHi.length); // 1 (*) proxy forwards "get length" operation to the target
+alert(sayHi.length); // 1 (*) proxy "length" okuma işlemini hedefe iletir
 */!*
 
-sayHi("John"); // Hello, John! (after 3 seconds)
+sayHi("John"); // Hello, John! (3 saniye sonra)
 ```
 
-The result is the same, but now not only calls, but all operations on the proxy are forwarded to the original function. So `sayHi.length` is returned correctly after the wrapping in the line `(*)`.
+Sonuç aynı, ancak artık yalnızca çağrılar değil, proxy üzerindeki tüm işlemler de orijinal fonksiyona iletiliyor. Bu nedenle `(*)` satırında sarmalamadan sonra `sayHi.length` doğru şekilde döndü.
 
-We've got a "richer" wrapper.
+Böylece daha “zengin” bir sarmalayıcı elde etmiş olduk.
 
-There exist other traps, but probably you've already got the idea.
+Başka trap’ler de var, fakat sanırım artık mantığı anladınız.
 
 ## Reflect
 
-The `Reflect` API was designed to work in tandem with `Proxy`.
+`Reflect` API’si, `Proxy` ile birlikte çalışmak üzere tasarlanmıştır.
 
-For every internal object operation that can be trapped, there's a `Reflect` method. It has the same name and arguments as the trap, and can be used to forward the operation to an object.
+Yakalanabilecek (trap’lenebilecek) her dahili nesne işlemi için bir `Reflect` metodu vardır.  
+Bu metodun adı ve parametreleri, ilgili trap ile aynıdır ve işlemi hedef nesneye iletmek için kullanılabilir.
 
-For example:
+
+Örneğin:
 
 ```js run
 let user = {
@@ -534,14 +536,14 @@ let name = user.name; // GET name
 user.name = "Pete"; // SET name TO Pete
 ```
 
-- `Reflect.get` gets the property, like `target[prop]` that we used before.
-- `Reflect.set` sets the property, like `target[prop] = value`, and also ensures the correct return value.
+- `Reflect.get`, tıpkı `target[prop]` gibi özelliği okur.
+- `Reflect.set`, tıpkı `target[prop] = value` gibi özelliği yazar, ayrıca doğru dönüş değerini de garanti eder.
 
-In most cases, we can do the same thing without `Reflect`. But we may miss some peculiar aspects.
+Çoğu durumda `Reflect` kullanmadan da aynı işi yapabiliriz, ancak bazı ince detayları kaçırabiliriz.
 
-Consider the following example, it doesn't use `Reflect` and doesn't work right.
+Aşağıdaki örneğe bakalım; `Reflect` kullanılmamış ve yanlış sonuç veriyor:
 
-We have a proxied user object and inherit from it, then use a getter:
+Bir user nesnesini proxy’liyoruz, sonra ondan kalıtım alıp bir getter kullanıyoruz:
 
 ```js run
 let user = {
@@ -564,27 +566,27 @@ let admin = {
 };
 
 *!*
-// Expected: Admin
+// Beklenen: Admin
 alert(admin.name); // Guest (?!?)
 */!*
 ```
 
-As you can see, the result is incorrect! The `admin.name` is expected to be `"Admin"`, not `"Guest"`! Without the proxy, it would be `"Admin"`, looks like the proxying "broke" our object.
+Gördüğünüz gibi sonuç hatalı! `admin.name` değerinin `"Admin"` olması gerekirken `"Guest"` döndü. Proxy olmadan `"Admin"` olacaktı; proxyleme nesneyi “bozmuş” gibi görünüyor.
 
 ![](proxy-inherit.svg)
 
-Why this happens? That's easy to understand if we explore what's going on during the call in the last line of the code.
+Peki neden? Son satırdaki çağrının ne yaptığına bakalım:
 
-1. There's no `name` property in `admin`, so `admin.name` call goes to `admin` prototype.
-2. The prototype is the proxy, so its `get` trap intercepts the attempt to read `name`.
-3. In the line `(*)` it returns `target[prop]`, but what is the `target`?
-    - The `target`, the first argument of `get`, is always the object passed to `new Proxy`, the original `user`.
-    - So, `target[prop]` invokes the getter `name` with `this=target=user`.
-    - Hence the result is `"Guest"`.
+1. `admin` içinde `name` özelliği yok, bu yüzden çağrı `admin`’in prototipine gider.
+2. Prototip bir proxy olduğu için, `get` tuzağı `name` okuma girişimini yakalar.
+3. `(*)` satırında `target[prop]` döndürülür, peki `target` nedir?
+    - `target`, `get`’in ilk parametresidir ve her zaman `new Proxy`’ye verilen orijinal nesnedir(`user`).
+    - Dolayısıyla, `target[prop]` getter `name`’i `this=target=user` olarak çağırır.
+    - Bu yüzden sonuç `"Guest"` olur.
 
-How to fix it? That's what the `receiver`, the third argument of `get` is for! It holds the correct `this`. We just need to call `Reflect.get` to pass it on.
+Bunu nasıl düzeltiriz? İşte bu noktada üçüncü parametre olan `receiver` devreye girer! `receiver`, doğru `this` değerini tutar. Sadece `Reflect.get`’i çağırarak bu değeri aktarabiliriz.
 
-Here's the correct variant:
+Doğru çözüm şöyle olur:
 
 ```js run
 let user = {
@@ -613,9 +615,9 @@ alert(admin.name); // Admin
 */!*
 ```
 
-Now the `receiver` holding the correct `this` is passed to getter by `Reflect.get` in the line `(*)`, so it works correctly.
+Artık `receiver`, doğru `this` değerini tutarak getter’a `Reflect.get` aracılığıyla (`(*)` satırında) aktarılır ve her şey düzgün çalışır.
 
-We could also write the trap as:
+Ayrıca tuzağı şu şekilde de yazabilirdik:
 
 ```js
 get(target, prop, receiver) {
@@ -623,27 +625,30 @@ get(target, prop, receiver) {
 }
 ```
 
-`Reflect` calls are named exactly the same way as traps and accept the same arguments. They were specifically designed this way.
+`Reflect` çağrıları, tuzaklarla birebir aynı isimlere ve argümanlara sahiptir.
+Bu özellikle böyle tasarlanmıştır.
 
-So, `return Reflect...` provides a safe no-brainer to forward the operation and make sure we don't forget anything related to that.
+Dolayısıyla `return Reflect...` şeklinde bir çağrı, işlemi güvenli bir şekilde iletmenin ve hiçbir detayı unutmamanın en kolay yoludur.
 
-## Proxy limitations
+## Proxy Sınırlamaları
 
-Proxies are a great way to alter or tweak the behavior of the existing objects, including built-in ones, such as arrays.
+Proxy’ler, var olan nesnelerin (hatta yerleşik olanların, örn. diziler) davranışlarını değiştirmek veya özelleştirmek için mükemmel bir araçtır.
 
-Still, it's not perfect. There are limitations.
+Yine de, bazı sınırlamaları vardır.
 
-### Built-in objects: Internal slots
+### Yerleşik Nesneler: İçsel Slotlar (Internal Slots)
 
-Many built-in objects, for example `Map`, `Set`, `Date`, `Promise` and others make use of so-called "internal slots".
+Birçok yerleşik nesne, örneğin `Map`, `Set`, `Date`, `Promise` ve benzerleri, “içsel slot” (internal slot) denen yapıları kullanır.
 
-These are like properties, but reserved for internal purposes. Built-in methods access them directly, not via `[[Get]]/[[Set]]` internal methods. So `Proxy` can't intercept that.
+Bunlar özelliklere benzer, ancak dahili amaçlar için ayrılmıştır.
+Yerleşik metotlar bu slotlara doğrudan erişir, `[[Get]]/[[Set]]` gibi içsel metotları kullanmazlar. Bu yüzden `Proxy` bunları yakalayamaz.
 
-Who cares? They are internal anyway!
+“Eee ne olmuş, sonuçta dahili yapılar!” diyebilirsiniz.
 
-Well, here's the issue. After such built-in object gets proxied, the proxy doesn't have these internal slots, so built-in methods will fail.
+Ama sorun şudur:
+Böyle bir yerleşik nesne proxylenirse, proxy bu içsel slotlara sahip olmaz ve dolayısıyla yerleşik metotlar çalışmaz.
 
-For example:
+Örneğin:
 
 ```js run
 let map = new Map();
@@ -651,15 +656,15 @@ let map = new Map();
 let proxy = new Proxy(map, {});
 
 *!*
-proxy.set('test', 1); // Error
+proxy.set('test', 1); // Hata
 */!*
 ```
 
-An attempt to set a value into a proxied `Map` fails, for the reason related to its [internal implementation](https://tc39.es/ecma262/#sec-map.prototype.set).
+Bir `Map` üzerinde `set` çağırmak başarısız olur; çünkü bu davranış [içsel implementasyona](https://tc39.es/ecma262/#sec-map.prototype.set) bağlıdır.
 
-Internally, a `Map` stores all data in its `[[MapData]]` internal slot. The proxy doesn't have such slot. The `set` method tries to access `this.[[MapData]]` internal property, but because `this=proxy`, can't find it in `proxy` and just fails.
+Dahili olarak bir `Map`, tüm verilerini `[[MapData]]` adlı içsel slotta saklar. Proxy’de böyle bir slot yoktur. `set` metodu `this.[[MapData]]`’ya erişmeye çalışır; ancak `this=proxy` olduğu için bulamaz ve hata verir.
 
-Fortunately, there's a way to fix it:
+Neyse ki bunu düzeltmenin bir yolu var:
 
 ```js run
 let map = new Map();
@@ -674,24 +679,24 @@ let proxy = new Proxy(map, {
 });
 
 proxy.set('test', 1);
-alert(proxy.get('test')); // 1 (works!)
+alert(proxy.get('test')); // 1 (çalışıyor!)
 ```
 
-Now it works fine, because `get` trap binds function properties, such as `map.set`, to the target object (`map`) itself.
+Şimdi düzgün çalışıyor, çünkü `get` tuzağı fonksiyon özellikleri (`map.set` gibi), hedef nesneye (`map`) bağlıyor.
 
-Unlike the previous example, the value of `this` inside `proxy.set(...)` will be not `proxy`, but the original `map`. So when the internal implementation of `set` tries to access `this.[[MapData]]` internal slot, it succeeds.
+Böylece `proxy.set(...)` içindeki `this` artık `proxy` değil, orijinal `map` olur. Dolayısıyla `set` metodu `this.[[MapData]]` slotuna erişmeye çalıştığında başarılı olur.
 
-```smart header="`Array` has no internal slots"
-A notable exception: built-in `Array` doesn't use internal slots. That's for historical reasons, as it appeared so long ago.
+```smart header="`Array`'in içsel slotları yoktur"
+Belirgin bir istisna: yerleşik `Array` içsel slotlar kullanmaz. Bu tarihsel bir sebepten dolayıdır, çok eski bir yapı olduğundan.
 
-So there's no such problem when proxying an array.
+Bu nedenle, dizileri proxy’lemek bu tür bir soruna yol açmaz.
 ```
 
-### Private fields
+### Özel Alanlar (Private Fields)
 
-The similar thing happens with private class fields.
+Benzer bir durum, sınıflardaki özel (private) alanlarda da görülür.
 
-For example, `getName()` method accesses the private `#name` property and breaks after proxying:
+Örneğin, `getName()` metodu özel `#name` alanına erişir, ancak proxy uygulandıktan sonra bozulur:
 
 ```js run
 class User {
@@ -711,11 +716,12 @@ alert(user.getName()); // Error
 */!*
 ```
 
-The reason is that private fields are implemented using internal slots. JavaScript does not use `[[Get]]/[[Set]]` when accessing them.
+Bunun nedeni, özel alanların (private fields) dahili slotlar (internal slots) kullanılarak uygulanmasıdır.
+JavaScript, bunlara erişirken `[[Get]]` veya `[[Set]]` mekanizmalarını kullanmaz.
 
-In the call `user.getName()` the value of `this` is the proxied user, and it doesn't have the slot with private fields.
+`user.getName()` çağrısında, `this` değeri proxylanmış kullanıcı nesnesidir ve bu nesnede özel alanların bulunduğu slot yoktur.
 
-Once again, the solution with binding the method makes it work:
+Daha önceki örneklerde olduğu gibi, metodu hedef nesneye bağlayarak (`bind`) bu durumu düzeltebiliriz:
 
 ```js run
 class User {
@@ -738,13 +744,15 @@ user = new Proxy(user, {
 alert(user.getName()); // Guest
 ```
 
-That said, the solution has drawbacks, explained previously: it exposes the original object to the method, potentially allowing it to be passed further and breaking other proxied functionality.
+Ancak bu çözümün daha önce açıkladığımız bir dezavantajı var:
+Metot, orijinal nesneye doğrudan erişim kazanır ve onu başka bir yere aktarabilir.
+Bu da diğer proxy işlevselliklerini bozabilir.
 
 ### Proxy != target
 
-Proxy and the original object are different objects. That's natural, right?
+Proxy ve orijinal nesne farklı nesnelerdir. Bu oldukça doğaldır, değil mi?
 
-So if we store the original object somewhere, and then proxy it, then things might break:
+Yani bir nesneyi bir yerde saklayıp daha sonra proxy’larsak, bazı şeyler bozulabilir:
 
 ```js run
 let allUsers = new Set();
@@ -767,34 +775,40 @@ alert(allUsers.has(user)); // false
 */!*
 ```
 
-As we can see, after proxying we can't find `user` in the set `allUsers`, because the proxy is a different object.
+Gördüğünüz gibi, proxylamadan sonra `user`, `allUsers` kümesinde bulunamıyor çünkü proxy farklı bir nesne.
 
-```warn header="Proxies can't intercept a strict equality test `===`"
-Proxies can intercept many operators, such as `new` (with `construct`), `in` (with `has`), `delete` (with `deleteProperty`) and so on.
+```warn header="Proxy'ler sıkı eşitlik testini `===` yakalayamaz"
+Proxy’ler `new` (-> `construct`), `in` (-> `has`), `delete` (-> `deleteProperty`) gibi birçok işlemi yakalayabilir.
 
-But there's no way to intercept a strict equality test for objects. An object is strictly equal to itself only, and no other value.
+Ancak, nesneler için sıkı eşitlik testi (`===`) yakalanamaz.
+Bir nesne yalnızca kendisine eşittir; başka hiçbir şeye değil.
 
-So all operations and built-in classes that compare objects for equality will differentiate between the object and the proxy. No transparent replacement here.
+Bu nedenle, nesneleri karşılaştıran tüm işlemler ve yerleşik sınıflar, nesne ile proxy arasında ayrım yapar.
+Yani proxy’ler tam anlamıyla “şeffaf” bir yedek olamaz.
 ```
 
 
-## Revocable proxies
+## Geri Alınabilir Proxy’ler (Revocable Proxies)
 
-A *revocable* proxy is a proxy that can be disabled.
+*Revocable proxy*, yani “geri alınabilir proxy”, devre dışı bırakılabilen bir proxy türüdür.
 
-Let's say we have a resource, and would like to close access to it any moment.
+Diyelim ki bir kaynağımız var ve istediğimiz anda bu kaynağa erişimi kapatmak istiyoruz.
 
-What we can do is to wrap it into a revocable proxy, without any traps. Such proxy will forward operations to object, and we also get a special method to disable it.
+Bunu, herhangi bir trap eklemeden bir “revocable proxy” ile sarmalayabiliriz.  
+Bu proxy işlemleri hedef nesneye iletir, ancak ayrıca onu devre dışı bırakmak için özel bir fonksiyon sağlar.
 
-The syntax is:
+
+Sözdizimi şöyledir:
 
 ```js
 let {proxy, revoke} = Proxy.revocable(target, handler)
 ```
 
-The call returns an object with the `proxy` and `revoke` function to disable it.
+Bu çağrı, iki özellik döndürür:
+- `proxy` vekil nesne,
+- `revoke` bu proxy’yi devre dışı bırakmak için kullanılan fonksiyon.
 
-Here's an example:
+Örnek:
 
 ```js run
 let object = {
@@ -803,19 +817,21 @@ let object = {
 
 let {proxy, revoke} = Proxy.revocable(object, {});
 
-// pass the proxy somewhere instead of object...
+// nesne yerine proxy’yi bir yere aktarabiliriz...
 alert(proxy.data); // Valuable data
 
-// later in our code
+// kodun ilerleyen bir kısmında
 revoke();
 
-// the proxy isn't working any more (revoked)
-alert(proxy.data); // Error
+// proxy artık çalışmaz (devre dışı)
+alert(proxy.data); // Hata
 ```
 
-A call to `revoke()` removes all internal references to the target object from the proxy, so they are no more connected. The target object can be garbage-collected after that.
+`revoke()` çağrısı, proxy’nin hedef nesneyle olan tüm dahili bağlantılarını kaldırır.
+Böylece artık birbirleriyle ilişkili değildirler.
+Bu noktadan sonra hedef nesne, çöp toplayıcı (garbage collector) tarafından silinebilir.
 
-We can also store `revoke` in a `WeakMap`, to be able to easily find it by the proxy:
+Ayrıca `revoke` fonksiyonunu bir `WeakMap` içinde saklayarak, proxy üzerinden kolayca bulabiliriz:
 
 
 ```js run
@@ -831,52 +847,61 @@ let {proxy, revoke} = Proxy.revocable(object, {});
 
 revokes.set(proxy, revoke);
 
-// ..later in our code..
+// ...kodun ilerleyen kısmında...
 revoke = revokes.get(proxy);
 revoke();
 
-alert(proxy.data); // Error (revoked)
+alert(proxy.data); // Hata (revoked)
 ```
 
-The benefit of such approach is that we don't have to carry `revoke` around. We can get it from the map by `proxy` when needeed.
+Bu yaklaşımın avantajı, `revoke` fonksiyonunu her yere taşımak zorunda olmamamızdır.
+Proxy üzerinden `WeakMap` aracılığıyla gerektiğinde erişebiliriz.
 
-Using `WeakMap` instead of `Map` here, because it should not block garbage collection. If a proxy object becomes "unreachable" (e.g. no variable references it any more), `WeakMap` allows it to be wiped from memory (we don't need its revoke in that case).
+Burada `Map` yerine `WeakMap` kullanmamızın nedeni, çöp toplamayı engellememesidir.
+Eğer bir proxy nesnesine artık erişilmiyorsa (örneğin hiçbir değişken onu tutmuyorsa), `WeakMap` onun bellekten silinmesine izin verir. Çünkü artık `revoke` fonksiyonuna da ihtiyacımız yoktur.
 
-## References
+## Referanslar
 
-- Specification: [Proxy](https://tc39.es/ecma262/#sec-proxy-object-internal-methods-and-internal-slots).
+- Spesifikasyon: [Proxy](https://tc39.es/ecma262/#sec-proxy-object-internal-methods-and-internal-slots).
 - MDN: [Proxy](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy).
 
-## Summary
+## Özet
 
-`Proxy` is a wrapper around an object, that forwards operations to the object, optionally trapping some of them.
+`Proxy`, bir nesnenin etrafını saran ve işlemleri o nesneye yönlendiren (ve istenirse bazılarını yakalayan) bir yapıdır.
 
-It can wrap any kind of object, including classes and functions.
+Her tür nesneyi, sınıflar ve fonksiyonlar dahil, sarmalayabilir.
 
-The syntax is:
+Sözdizimi:
 
 ```js
 let proxy = new Proxy(target, {
-  /* traps */
+  /* tuzaklar */
 });
 ```
 
-...Then we should use `proxy` everywhere instead of `target`. A proxy doesn't have its own properties or methods. It traps an operation if the trap is provided or forwards it to `target` object.
+...Bundan sonra `target` yerine her yerde `proxy` kullanılmalıdır. Bir proxy’nin kendi özellikleri veya metotları yoktur.
+Bir işlem, uygun bir trap tanımlanmışsa yakalanır; yoksa hedef nesneye (`target`) iletilir.
 
-We can trap:
-- Reading (`get`), writing (`set`), deleting (`deleteProperty`) a property (even a non-existing one).
-- Calling functions with `new` (`construct` trap) and without `new` (`apply` trap)
-- Many other operations (the full list is at the beginning of the article and in the [docs](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy)).
+Yakalanabilecek işlemler şunlardır:
+- Özellik okuma (`get`), yazma (`set`), silme (`deleteProperty`), hatta var olmayan bir özellik bile.
+- Fonksiyon çağrıları: `new` ile (`construct` tuzağı), `new` olmadan (`apply` tuzağı).
+- Daha birçok işlem (tam liste makalenin başında ve [MDN dokümentasyonunda](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) yer alır).
 
-That allows us to create "virtual" properties and methods, implement default values, observable objects, function decorators and so much more.
+Bu sayede:
+- “Sanal” (virtual) özellikler ve metotlar oluşturabiliriz,
+- Varsayılan değerler tanımlayabiliriz,
+- Gözlemlenebilir (observable) nesneler oluşturabiliriz,
+- Fonksiyon dekoratörleri (decorators) yazabiliriz,
+ve çok daha fazlasını yapabiliriz.
 
-We can also wrap an object multiple times in different proxies, decorating it with various aspects of functionality.
 
-The [Reflect](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Reflect) API is designed to complement [Proxy](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy). For any `Proxy` trap, there's a `Reflect` call with same arguments. We should use those to forward calls to target objects.
+Bir nesneyi farklı `Proxy` katmanlarıyla birden fazla kez sarmalayabiliriz. Her biri farklı bir işlevsellik ekleyebilir.
 
-Proxies have some limitations:
+[Reflect](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Reflect) API'si [Proxy](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy)’yi tamamlamak üzere tasarlanmıştır. Her `Proxy` tuzağı için aynı argümanları alan bir `Reflect` çağrısı bulunur. Bu çağrılar, işlemleri hedef nesneye güvenli bir şekilde iletmek için kullanılmalıdır.
 
-- Built-in objects have "internal slots", access to those can't be proxied. See the workaround above.
-- The same holds true for private class fields, as they are internally implemented using slots. So proxied method calls must have the target object as `this` to access them.
-- Object equality tests `===` can't be intercepted.
-- Performance: benchmarks depend on an engine, but generally accessing a property using a simplest proxy takes a few times longer. In practice that only matters for some "bottleneck" objects though.
+Proxy’lerin bazı sınırlamaları vardır:
+
+- Yerleşik nesneler, "içsel slot" (internal slot) adı verilen alanlara sahiptir; bunlara erişim proxy ile yakalanamaz. (Yukarıda çözüm örneği verilmiştir.)
+- Aynı durum özel (private) sınıf alanları için de geçerlidir; bunlar da slot’lar aracılığıyla uygulanır. Bu nedenle proxylanmış metod çağrıları, bu alanlara erişebilmek için `this` değerinin hedef nesne olması gerekir.
+- Nesne eşitlik testi (`===`) yakalanamaz.
+- Performans: Proxy üzerinden özellik erişimi genellikle birkaç kat daha yavaştır. Ancak pratikte bu fark yalnızca dar boğaz oluşturan nesnelerde hissedilir.
