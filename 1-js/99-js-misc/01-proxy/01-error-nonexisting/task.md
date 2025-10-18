@@ -1,13 +1,12 @@
 
-# Error on reading non-existant property
+# Mevcut olmayan özelliği okuma hatası
 
-Create a proxy that throws an error for an attempt to read of a non-existant property.
+Mevcut olmayan bir özelliği okumaya çalışıldığında hata fırlatan bir proxy oluşturun.
 
-That can help to detect programming mistakes early.
+Bu, programlama hatalarını erken tespit etmeye yardımcı olabilir.
 
-Write a function `wrap(target)` that takes an object `target` and return a proxy instead with that functionality.
-
-That's how it should work:
+Bir nesne `target` alan ve bu işlevselliğe sahip bir proxy döndüren `wrap(target)` fonksiyonunu yazın.
+Şöyle çalışmalı:
 
 ```js
 let user = {
@@ -17,7 +16,7 @@ let user = {
 function wrap(target) {
   return new Proxy(target, {
 *!*
-      /* your code */
+      /* kodunuz */
 */!*
   });
 }
@@ -26,6 +25,6 @@ user = wrap(user);
 
 alert(user.name); // John
 *!*
-alert(user.age); // Error: Property doesn't exist
+alert(user.age); // Hata: Özellik yok
 */!*
 ```

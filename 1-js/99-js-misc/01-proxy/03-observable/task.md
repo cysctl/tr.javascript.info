@@ -1,13 +1,13 @@
 
-# Observable
+# Gözlemlenebilir (Observable)
 
-Create a function `makeObservable(target)` that "makes the object observable" by returning a proxy.
+Bir nesneyi "gözlemlenebilir" yapan ve bir proxy döndüren `makeObservable(target)` fonksiyonunu oluşturun.
 
-Here's how it should work:
+Şöyle çalışmalı:
 
 ```js run
 function makeObservable(target) {
-  /* your code */
+  /* kodunuz */
 }
 
 let user = {};
@@ -20,10 +20,9 @@ user.observe((key, value) => {
 user.name = "John"; // alerts: SET name=John
 ```
 
-In other words, an object returned by `makeObservable` has the method `observe(handler)`.
+Başka bir deyişle, `makeObservable` tarafından döndürülen nesnede `observe(handler)` metodu bulunur.
 
-Whenever a property changes, `handler(key, value)` is called with the name and value o the property.
+Bir özelliğin değeri değiştiğinde, ilgili özelliğin adı ve değeri ile `handler(key, value)` çağrılır.
 
-
-P.S. In this task, please handle only writing to a property. Other operations can be implemented in a similar way.
-P.P.S. You might want to introduce a global variable or a global structure to store handlers. That's fine here. In real life, such function lives in a module, that has its own global scope. 
+Not: Bu görevde yalnızca bir özelliğe değer atamayı (yazmayı) ele alın. Diğer işlemler benzer şekilde uygulanabilir.
+Ek Not: Handler'ları saklamak için global bir değişken veya global bir yapı kullanabilirsiniz. Burada bu uygundur. Gerçek hayatta, böyle bir fonksiyon kendi global kapsamına sahip bir modülde yaşar.

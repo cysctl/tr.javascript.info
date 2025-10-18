@@ -1,33 +1,33 @@
 
-# Accessing array[-1]
+# array[-1]'e Erişmek
 
-In some languages, we can access array elements using negative indexes, counted from the end.
+Bazı dillerde, dizi elemanlarına sondan sayılarak negatif indekslerle erişebiliriz.
 
-Like this:
+Şöyle:
 
 ```js
 let array = [1, 2, 3];
 
-array[-1]; // 3, the last element
-array[-2]; // 2, one step from the end
-array[-3]; // 1, two steps from the end
+array[-1]; // 3, son eleman
+array[-2]; // 2, sondan bir önceki eleman
+array[-3]; // 1, sondan iki önceki eleman
 ```
 
-In other words, `array[-N]` is the same as `array[array.length - N]`.
+Başka bir deyişle, `array[-N]` ifadesi `array[array.length - N]` ile aynıdır.
 
-Create a proxy to implement that behavior.
+Bu davranışı uygulamak için bir proxy oluşturun.
 
-That's how it should work:
+Şöyle çalışmalı:
 
 ```js
 let array = [1, 2, 3];
 
 array = new Proxy(array, {
-  /* your code */
+  /* kodunuz */
 });
 
 alert( array[-1] ); // 3
 alert( array[-2] ); // 2
 
-// Other array functionality should be kept "as is"
+// Geri kalan dizi(array) özelliği "olduğu gibi" kalmalıdır
 ```

@@ -1,107 +1,109 @@
 
-# Proxy and Reflect
+# Proxy ve Reflect
 
-A *proxy* wraps another object and intercepts operations, like reading/writing properties and others, optionally handling them on its own, or transparently allowing the object to handle them.
+Bir *proxy* (vekil), başka bir nesneyi sarmalar ve özellik okuma/yazma gibi işlemleri engeller (intercept eder). Bu işlemleri kendisi yönetebilir veya şeffaf bir şekilde hedef nesnenin yönetmesine izin verebilir.
 
-Proxies are used in many libraries and some browser frameworks. We'll see many practical applications in this chapter.
+Proxy’ler birçok kütüphanede ve bazı tarayıcı framework’lerinde kullanılır. Bu bölümde birçok pratik kullanım örneği göreceğiz.
 
-The syntax:
+Sözdizimi:
 
 ```js
 let proxy = new Proxy(target, handler)
 ```
 
-- `target` -- is an object to wrap, can be anything, including functions.
-- `handler` -- an object with "traps": methods that intercept operations., e.g. `get` for reading a property, `set` for writing a property, etc.
+- `target` -- sarmalanacak nesne; fonksiyonlar da dahil olmak üzere herhangi bir şey olabilir.
+- `handler` -- işlemleri yakalayan (“trap” adı verilen) metotları içeren bir nesnedir. Örneğin, bir özelliği okumak için `get`, bir özelliğe yazmak için `set` gibi.
 
-For operations on `proxy`, if there's a corresponding trap in `handler`, then it runs, and the proxy has a chance to handle it, otherwise the operation is performed on `target`.
+`proxy` üzerinde bir işlem yapılırsa, `handler` içinde o işleme karşılık gelen bir trap varsa, o çalıştırılır; yoksa işlem `target`üzerinde gerçekleştirilir.
 
-As a starting example, let's create a proxy without any traps:
+Basit bir örnek olarak, hiç trap içermeyen bir proxy oluşturalım:
 
 ```js run
 let target = {};
-let proxy = new Proxy(target, {}); // empty handler
+let proxy = new Proxy(target, {}); // boş handler
 
-proxy.test = 5; // writing to proxy (1)
-alert(target.test); // 5, the property appeared in target!
+proxy.test = 5; // proxy’ye yazma (1)
+alert(target.test); // 5, özellik target üzerinde belirdi!
 
-alert(proxy.test); // 5, we can read it from proxy too (2)
+alert(proxy.test); // 5, proxy’den de okuyabiliyoruz (2)
 
-for(let key in proxy) alert(key); // test, iteration works (3)
+for(let key in proxy) alert(key); // test, döngü çalışıyor (3)
 ```
 
-As there are no traps, all operations on `proxy` are forwarded to `target`.
+Hiç trap olmadığından, `proxy` üzerindeki tüm işlemler `target`’a yönlendirilir.
 
-1. A writing operation `proxy.test=` sets the value on `target`.
-2. A reading operation `proxy.test` returns the value from `target`.
-3. Iteration over `proxy` returns values from `target`.
+1. `proxy.test=` yazma işlemi, değeri `target` üzerine yazar.
+2. `proxy.test` okuma işlemi, değeri `target`’tan döndürür.
+3. `proxy` üzerinde döngü yapmak, `target`’taki değerleri döndürür.
 
-As we can see, without any traps, `proxy` is a transparent wrapper around `target`.
+Gördüğümüz gibi, trap olmadan `proxy`, `target` üzerinde şeffaf bir sarmalayıcı gibi davranır.
 
 ![](proxy.svg)  
 
-The proxy is a special "exotic object". It doesn't have "own" properties. With an empty handler it transparently forwards operations to `target`.
+Proxy, özel bir “egzotik nesnedir”. Kendi özellikleri yoktur. Boş bir handler ile, işlemleri tamamen `target`’a yönlendirir.
 
-If we want any magic, we should add traps.
+Eğer sihirli bir davranış istiyorsak, trap’ler eklememiz gerekir.
 
-There's a list of internal object operations in the [Proxy specification](https://tc39.es/ecma262/#sec-proxy-object-internal-methods-and-internal-slots). A proxy can intercept any of these, we just need to add a handler method.
+[Proxy spesifikasyonu](https://tc39.es/ecma262/#sec-proxy-object-internal-methods-and-internal-slots)’nda tanımlanmış bir dizi dahili nesne işlemi vardır. Bir proxy, bunlardan herhangi birini yakalayabilir; bunun için handler’a karşılık gelen metodu eklememiz yeterlidir.
 
-In the table below:
-- **Internal Method** is the specification-specific name for the operation. For example, `[[Get]]` is the name of the internal, specification-only method of reading a property. The specification describes how this is done at the very lowest level.
-- **Handler Method** is a method name that we should add to proxy `handler` to trap the operation and perform custom actions.
+Aşağıdaki tabloda:
+- **İçsel Metot(Internal Method)** Spesifikasyondaki dahili işlemin adıdır. Örneğin, `[[Get]]` bir özelliği okuma işlemidir.
+- **Handler Metodu(Handler Method)** `handler`’a eklememiz gereken metot adıdır; bu metot işlemi yakalar ve özel bir davranış tanımlar.
 
 
-| Internal Method | Handler Method | Traps... |
+| İçsel Metot | Handler Metodu | Yakalanan İşlem(Traps)... |
 |-----------------|----------------|-------------|
-| `[[Get]]` | `get` | reading a property |
-| `[[Set]]` | `set` | writing to a property |
-| `[[HasProperty]]` | `has` | `in` operator |
-| `[[Delete]]` | `deleteProperty` | `delete` operator |
-| `[[Call]]` | `apply` | function call |
-| `[[Construct]]` | `construct` | `new` operator |
+| `[[Get]]` | `get` | özelliği okuma |
+| `[[Set]]` | `set` | özelliğe yazma |
+| `[[HasProperty]]` | `has` | `in` operatörü |
+| `[[Delete]]` | `deleteProperty` | `delete` operatörü |
+| `[[Call]]` | `apply` | fonksiyon çağrısı |
+| `[[Construct]]` | `construct` | `new` operatörü |
 | `[[GetPrototypeOf]]` | `getPrototypeOf` | [Object.getPrototypeOf](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/getPrototypeOf) |
 | `[[SetPrototypeOf]]` | `setPrototypeOf` | [Object.setPrototypeOf](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/setPrototypeOf) |
 | `[[IsExtensible]]` | `isExtensible` | [Object.isExtensible](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/isExtensible) |
 | `[[PreventExtensions]]` | `preventExtensions` | [Object.preventExtensions](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/preventExtensions) |
 | `[[GetOwnProperty]]` | `getOwnPropertyDescriptor` | [Object.getOwnPropertyDescriptor](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/getOwnPropertyDescriptor) |
 | `[[DefineOwnProperty]]` | `defineProperty` | [Object.defineProperty](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty), [Object.defineProperties](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperties) |
-| `[[OwnPropertyKeys]]` | `ownKeys` | [Object.keys](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/keys), [Object.getOwnPropertyNames](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/getOwnPropertyNames), [Object.getOwnPropertySymbols](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/getOwnPropertySymbols), iteration keys |
+| `[[OwnPropertyKeys]]` | `ownKeys` | [Object.keys](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/keys), [Object.getOwnPropertyNames](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/getOwnPropertyNames), [Object.getOwnPropertySymbols](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/getOwnPropertySymbols), yineleme anahtarları |
 
 ```warn header="Invariants"
-JavaScript enforces some invariants -- conditions that must be fulfilled by internal methods and traps.
+JavaScript, bazı değişmez kuralları zorunlu kılar — bu kurallar, içsel metotlar ve trap’lerin belirli koşulları yerine getirmesini sağlar.
 
-Most of them are for return values:
-- `[[Set]]` must return `true` if the value was written successfully, otherwise `false`.
-- `[[Delete]]` must return `true` if the value was deleted successfully, otherwise `false`.
-- ...and so on, we'll see more in examples below.
+Çoğu, dönüş değerleriyle ilgilidir:
+- `[[Set]]` başarılıysa `true`, değilse `false` döndürmelidir.
+- `[[Delete]]` başarılıysa `true`, değilse `false` döndürmelidir.
+- …ve benzerleri; aşağıda örneklerde göreceğiz.
 
-There are some other invariants, like:
-- `[[GetPrototypeOf]]`, applied to the proxy object must return the same value as `[[GetPrototypeOf]]` applied to the proxy object's target object.
+Bazı diğer kurallar:
+- `[[GetPrototypeOf]]` çağrıldığında, proxy nesnesinin prototipi, hedef nesneninkiyle aynı olmalıdır.
 
-In other words, reading prototype of a `proxy` must always return the prototype of the target object. The `getPrototypeOf` trap may intercept this operation, but it must follow this rule, not do something crazy.
+Yani, bir `proxy`’nin prototipini okuduğumuzda, her zaman hedef nesnenin prototipini döndürmelidir. `getPrototypeOf` trap bu işlemi yakalayabilir ama bu kurala uymalıdır.
 
-Invariants ensure correct and consistent behavior of language features. The full invariants list is in [the specification](https://tc39.es/ecma262/#sec-proxy-object-internal-methods-and-internal-slots), you probably won't violate them, if not doing something weird.
+Bu değişmez kurallar, dilin tutarlı ve doğru çalışmasını sağlar. Tüm liste [spesifikasyonda](https://tc39.es/ecma262/#sec-proxy-object-internal-methods-and-internal-slots) bulunur; genellikle sıradışı bir şey yapmadığınız sürece ihlal etmezsiniz.
+
 ```
 
-Let's see how that works on practical examples.
+Haydi bunun pratik örneklerde nasıl çalıştığına bakalım.
 
-## Default value with "get" trap
+## "get" tuzağı ile varsayılan değer
 
-The most common traps are for reading/writing properties.
+En yaygın trap’ler özellik okuma/yazma içindir.
 
-To intercept the reading, the `handler` should have a method `get(target, property, receiver)`.
+Okumayı yakalamak için, `handler` içinde `get(target, property, receiver)` adlı bir metot bulunmalıdır.
 
-It triggers when a property is read:
+Bir özellik okunduğunda tetiklenir:
 
-- `target` -- is the target object, the one passed as the first argument to `new Proxy`,
-- `property` -- property name,
-- `receiver` -- if the property is a getter, then `receiver` is the object that's going to be used as `this` in that code. Usually that's the `proxy` object itself (or an object that inherits from it, if we inherit from proxy).
+- `target` -- hedef nesnedir; `new Proxy`’ye ilk argüman olarak verilen nesne,
+- `property` -- özellik adı,
+- `receiver` -- eğer özellik bir getter ise, o kodda `this` olarak kullanılacak nesnedir. Genellikle bu `proxy` nesnesinin kendisidir (veya proxy’den miras alıyorsak ondan türeyen nesne).
 
-Let's use `get` to implement default values for an object.
+Bir nesne için varsayılan değerleri uygulamak üzere `get`’i kullanalım.
 
-For instance, we'd like a numeric array to return `0` for non-existant values instead of `undefined`.
+Örneğin, sayısal bir dizinin var olmayan indeksler için `undefined` yerine `0` döndürmesini istiyoruz.
 
-Let's wrap it into a proxy that traps reading and returns the default value if there's no such property:
+Bunu, okumayı yakalayan ve öyle bir özellik yoksa varsayılan değer döndüren bir proxy ile saralım:
+
 
 ```js run
 let numbers = [0, 1, 2];
@@ -111,20 +113,20 @@ numbers = new Proxy(numbers, {
     if (prop in target) {
       return target[prop];
     } else {
-      return 0; // default value
+      return 0; // varsayılan değer
     }
   }
 });
 
 *!*
 alert( numbers[1] ); // 1
-alert( numbers[123] ); // 0 (no such value)
+alert( numbers[123] ); // 0 (böyle bir değer yok)
 */!*
 ```
 
-The approach is generic. We can use `Proxy` to implement any logic for "default" values.
+Bu yaklaşım geneldir. "Varsayılan" değer mantığını `Proxy` ile istediğimiz gibi kurabiliriz.
 
-Imagine, we have a dictionary with phrases along with translations:
+Diyelim ki elimizde ifadeler ve onların çevirilerinden oluşan bir sözlük var:
 
 ```js run
 let dictionary = {
@@ -136,9 +138,9 @@ alert( dictionary['Hello'] ); // Hola
 alert( dictionary['Welcome'] ); // undefined
 ```
 
-Right now, if there's no phrase, reading from `dictionary` returns `undefined`. But in practice, leaving a phrase non-translated is usually better than `undefined`. So let's make a non-translated phrase the default value instead of `undefined`.
+Şu anda, bir ifade yoksa `dictionary`’den okumak `undefined` döndürüyor. Ama pratikte, çevrilmemiş bir ifadeyi olduğu gibi bırakmak çoğu zaman `undefined`’dan daha iyidir. O hâlde, `undefined` yerine varsayılan değerin çevrilmemiş ifadenin kendisi olmasını sağlayalım.
 
-To achieve that, we'll wrap `dictionary` in a proxy that intercepts reading operations:
+Bunu başarmak için, okumayı yakalayan bir proxy ile`dictionary`’yi saracağız:
 
 ```js run
 let dictionary = {
@@ -148,59 +150,59 @@ let dictionary = {
 
 dictionary = new Proxy(dictionary, {
 *!*
-  get(target, phrase) { // intercept reading a property from dictionary
+  get(target, phrase) { // dictionary’den bir özellik okunmasını yakala
 */!*
-    if (phrase in target) { // if we have it in the dictionary
-      return target[phrase]; // return the translation
+    if (phrase in target) { // sözlükte varsa
+      return target[phrase]; // çeviriyi döndür
     } else {
-      // otherwise, return the non-translated phrase
+      // yoksa, çevrilmemiş ifadeyi döndür
       return phrase;
     }
   }
 });
 
-// Look up arbitrary phrases in the dictionary!
-// At worst, they are not translated.
+// Sözlükte rastgele ifadeleri ara!
+// En kötü ihtimalle çevrilmemiş olarak dönerler.
 alert( dictionary['Hello'] ); // Hola
 *!*
-alert( dictionary['Welcome to Proxy']); // Welcome to Proxy (no translation)
+alert( dictionary['Welcome to Proxy']); // Welcome to Proxy (çeviri yok)
 */!*
 ```
 
-````smart header="Proxy should be used instead of `target` everywhere"
-Please note how the proxy overwrites the variable:
+````smart header="Proxy, her yerde `target` yerine kullanılmalıdır"
+Proxy’nin değişkenin üzerine nasıl yazdığına dikkat edin:
 
 ```js
 dictionary = new Proxy(dictionary, ...);
 numbers = new Proxy(numbers, ...);
 ```
 
-The proxy should totally replace the target object everywhere. No one should ever reference the target object after it got proxied. Otherwise it's easy to mess up.
+Proxy, hedef nesnenin yerini her yerde tamamen almalıdır. Bir nesne proxylenmişse, sonrasında kimse hedef nesneye doğrudan referans vermemelidir. Aksi takdirde işler kolayca karışır.
 ````
 
-## Validation with "set" trap
+## "set" tuzağı ile doğrulama (Validation)
 
-Now let's intercept writing as well.
+Şimdi yazma işlemlerini de yakalayalım.
 
-Let's say we want a numeric array. If a value of another type is added, there should be an error.
+Diyelim ki yalnızca sayılardan oluşan bir dizi istiyoruz. Eğer farklı türde bir değer eklenirse, bir hata fırlatılmalı.
 
-The `set` trap triggers when a property is written: `set(target, property, value, receiver)`
+`set` tuzağı (trap), bir özellik yazıldığında tetiklenir: `set(target, property, value, receiver)`
 
-- `target` -- is the target object, the one passed as the first argument to `new Proxy`,
-- `property` -- property name,
-- `value` -- property value,
-- `receiver` -- same as in `get` trap, only matters if the property is a setter.
+- `target` -- hedef nesnedir; `new Proxy`’ye ilk argüman olarak verilen nesne,
+- `property` -- özellik adı,
+- `value` -- özellik değeri,
+- `receiver` -- `get` tuzağındakiyle aynıdır; yalnızca özellik bir setter ise önemlidir.
 
-The `set` trap should return `true` if setting is successful, and `false` otherwise (leads to `TypeError`).
+`set` tuzağı, işlem başarılıysa `true`, başarısızsa `false` döndürmelidir (aksi hâlde `TypeError` oluşur).
 
-Let's use it to validate new values:
+Yeni değerleri doğrulamak için bunu kullanalım:
 
 ```js run
 let numbers = [];
 
 numbers = new Proxy(numbers, { // (*)
 *!*
-  set(target, prop, val) { // to intercept property writing
+  set(target, prop, val) { // özelliğe yazmayı yakala
 */!*
     if (typeof val == 'number') {
       target[prop] = val;
@@ -219,28 +221,31 @@ alert("Length is: " + numbers.length); // 2
 numbers.push("test"); // TypeError ('set' on proxy returned false)
 */!*
 
-alert("This line is never reached (error in the line above)");
+alert("Bu satıra asla ulaşılmaz (yukarıdaki satırda hata var)");
 ```
 
-Please note: the built-in functionality of arrays is still working! The `length` property auto-increases when values are added. Our proxy doesn't break anything.
+Dikkat ederseniz, dizinin yerleşik işlevleri hâlâ çalışıyor!
+Yeni değerler eklendiğinde `length` özelliği otomatik olarak artıyor. Proxy’miz hiçbir şeyi bozmadı.
 
-Also, we don't have to override value-adding array methods like `push` and `unshift`, and so on! Internally, they use `[[Set]]` operation, that's intercepted by the proxy.
+Ayrıca`push`, `unshift` gibi değer ekleyen metotları da yeniden tanımlamamız gerekmedi.
+Çünkü bunlar dahili olarak `[[Set]]` işlemini kullanırlar ve bu işlem proxy tarafından yakalanır.
 
-So the code is clean and concise.
+Kod bu sayede hem temiz hem de kısa olur.
 
-```warn header="Don't forget to return `true`"
-As said above, there are invariants to be held.
+```warn header="`true` döndürmeyi unutmayın"
+Yukarıda belirtildiği gibi, bazı değişmez kurallar (invariant) vardır.
 
-For `set`, it must return `true` for a successful write.
+`set` işlemi başarılıysa `true` döndürmelidir.
 
-If it returns a falsy value (or doesn't return anything), that triggers `TypeError`.
+Eğer yanlış (falsy) bir değer döndürülürse (veya hiç değer döndürülmezse), bu `TypeError` hatasına neden olur.
 ```
 
-## Protected properties with "deleteProperty" and "ownKeys"
+## "deleteProperty" ve "ownKeys" ile korunan özellikler
 
-There's a widespread convention that properties and methods prefixed by an underscore `_` are internal. They shouldn't be accessible from outside the object.
+Yaygın bir konvansiyona göre, `_` (alt çizgi) ile başlayan özellikler ve metotlar içseldir.  
+Bu tür özelliklere nesnenin dışından erişilmemelidir.
 
-Technically, that's possible though:
+Teknik olarak erişmek mümkündür:
 
 ```js run
 let user = {
@@ -251,15 +256,15 @@ let user = {
 alert(user._password); // secret  
 ```
 
-Let's use proxies to prevent any access to properties starting with `_`.
+Şimdi `_` ile başlayan özelliklere erişimi engellemek için proxy kullanalım.
 
-We'll need the traps:
-- `get` to throw an error when reading,
-- `set` to throw an error when writing,
-- `deleteProperty` to throw an error when deleting,
-- `ownKeys` to skip properties starting with `_` when iterating over an object or using `Object.keys()`
+Bunun için şu tuzaklara ihtiyacımız var:
+- `get` okuma sırasında hata fırlatmak için,
+- `set` yazma sırasında hata fırlatmak için,
+- `deleteProperty` silme sırasında hata fırlatmak için,
+- `ownKeys` `_` ile başlayan özellikleri `for...in` döngüsü veya `Object.keys()` gibi işlemlerden gizlemek için.
 
-Here's the code:
+Kod şu şekilde olur:
 
 ```js run
 let user = {
@@ -272,53 +277,53 @@ user = new Proxy(user, {
   get(target, prop) {
 */!*
     if (prop.startsWith('_')) {
-      throw new Error("Access denied");
+      throw new Error("Erişim reddedildi");
     }
     let value = target[prop];
     return (typeof value === 'function') ? value.bind(target) : value; // (*)
   },
 *!*
-  set(target, prop, val) { // to intercept property writing
+  set(target, prop, val) { // yazma işlemini yakala
 */!*
     if (prop.startsWith('_')) {
-      throw new Error("Access denied");
+      throw new Error("Erişim reddedildi");
     } else {
       target[prop] = val;
     }
   },
 *!*
-  deleteProperty(target, prop) { // to intercept property deletion
+  deleteProperty(target, prop) { // silme işlemini yakala
 */!*  
     if (prop.startsWith('_')) {
-      throw new Error("Access denied");
+      throw new Error("Erişim reddedildi");
     } else {
       delete target[prop];
       return true;
     }
   },
 *!*
-  ownKeys(target) { // to intercept property list
+  ownKeys(target) { // özellik listesini yakala
 */!*
     return Object.keys(target).filter(key => !key.startsWith('_'));
   }
 });
 
-// "get" doesn't allow to read _password
+// "get" -> _password okunamaz
 try {
-  alert(user._password); // Error: Access denied
+  alert(user._password); // Hata: Erişim reddedildi
 } catch(e) { alert(e.message); }
 
-// "set" doesn't allow to write _password
+// "set" -> _password yazılamaz
 try {
-  user._password = "test"; // Error: Access denied
+  user._password = "test"; // Hata: Erişim reddedildi
 } catch(e) { alert(e.message); }
 
-// "deleteProperty" doesn't allow to delete _password
+// "deleteProperty" -> _password silinemez
 try {
-  delete user._password; // Error: Access denied
+  delete user._password; // Hata: Erişim reddedildi
 } catch(e) { alert(e.message); }
 
-// "ownKeys" filters out _password
+// "ownKeys" -> _password filtrelenir
 for(let key in user) alert(key); // name
 ```
 
